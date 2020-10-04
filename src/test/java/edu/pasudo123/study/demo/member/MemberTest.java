@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
+import java.util.List;
+
+import static edu.pasudo123.study.demo.member.QMember.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -22,6 +25,8 @@ class MemberTest {
 
     @Autowired
     private EntityManager em;
+
+    JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 
     @BeforeEach
     @DisplayName("Member 엔티티를 선행으로 삽입한다.")
@@ -56,16 +61,34 @@ class MemberTest {
     @DisplayName("querydsl 을 통해서 데이터를 조회한다.")
     public void querydslTest() {
 
-        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
-        QMember member = new QMember("m");      // 임의로 `m` 을 삽입 (구분하는 이름인데 중요하진 않다고 함)
-
-
+        // when
         final Member foundMember = queryFactory
                 .selectFrom(member)
                 .from(member)
                 .where(member.username.eq("PARK SUNG DONG"))
                 .fetchOne();
 
+        // then
+        assert foundMember != null;
+        assertThat(foundMember.getUsername()).isEqualTo("PARK SUNG DONG");
+    }
+
+    @Test
+    @DisplayName("querydsl 을 통해 검색 조회를 수행한다.")
+    public void querydslSearchTest() {
+
+        // when
+        final Member foundMember = queryFactory
+                .selectFrom(member)
+                .where(
+//                        member.username.eq("PARK SUNG DONG")
+//                                .and(member.age.eq(30)))
+                        member.username.eq("PARK SUNG DONG"),
+                        member.age.eq(30)
+                )
+                .fetchOne();
+
+        // then
         assert foundMember != null;
         assertThat(foundMember.getUsername()).isEqualTo("PARK SUNG DONG");
     }
