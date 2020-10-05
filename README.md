@@ -63,3 +63,100 @@ fetchCount()    // count 쿼리로 변경되어 count 수 조회
 .groupBy(item.price)
 .having(item.price.gt(1000))
 ```
+
+<BR>
+
+## Querydsl inner join 
+```java
+final List<Member> members = queryFactory
+        .selectFrom(member)
+        .join(member.team, team)
+        .where(team.name.eq("YES TEAM"))
+        .fetch();
+
+// inner join 수행
+select
+    member0_.id as id1_0_,
+    member0_.age as age2_0_,
+    member0_.team_id as team_id4_0_,
+    member0_.username as username3_0_ 
+from
+    member member0_ 
+inner join
+    team team1_ 
+        on member0_.team_id=team1_.id 
+where
+    team1_.name=?
+``` 
+
+<BR>
+
+## Querydsl left join
+```java
+final List<Member> members = queryFactory
+        .selectFrom(member)
+        .leftJoin(member.team, team)
+        .where(team.name.eq("YES TEAM"))
+        .fetch();
+
+// left outer join
+select
+    member0_.id as id1_0_,
+    member0_.age as age2_0_,
+    member0_.team_id as team_id4_0_,
+    member0_.username as username3_0_ 
+from
+    member member0_ 
+left outer join
+    team team1_ 
+        on member0_.team_id=team1_.id 
+where
+    team1_.name=?
+```
+
+<BR>
+
+## ON 절을 이용한 join
+* 조인대상 필터링 
+   * 외부조인인 경우에는 `on()` 절을 사용
+   * 내부조인을 사용하고자 하는 경우에는 `join()`, `where()` 를 사용할 수 있도록 한다.
+* 연관관계가 없는 엔티티에 대한 외부조인 가능
+    * 아래의 `두 가지를 비교` 한다.
+    * 일반조인 `leftJoin(member.team, team)` : `FK` 값을 연걸하는 형태이다.
+    * on 조인 `from(member).leftJoin(team).on(member.username.eq(team.name))`
+
+```java
+final List<Tuple> tuples = queryFactory
+        .select(member, team)
+        .from(member)
+        .leftJoin(member.team, team).on(team.name.eq("NEW TEAM"))
+        .fetch();
+
+select
+    member0_.id as id1_0_0_,
+    team1_.id as id1_1_1_,
+    member0_.age as age2_0_0_,
+    member0_.team_id as team_id4_0_0_,
+    member0_.username as username3_0_0_,
+    team1_.name as name2_1_1_ 
+from
+    member member0_ 
+left outer join
+    team team1_ 
+        on member0_.team_id=team1_.id 
+        and (
+            team1_.name=?
+        )
+
+// 외부조인이기 때문에 null 값이 나오는데 null 값이 나오고자 하지 않는다면, 
+// join() 메소드를 사용하여 내부조인을 사용할 수 있도록 한다.
+// 아래은 그 예시
+
+// 내부조인을 이용
+final List<Tuple> tuples = queryFactory
+        .select(member, team)
+        .from(member)
+        .join(member.team, team)
+        .where(team.name.eq("NEW TEAM"))
+        .fetch();
+```

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
@@ -35,13 +36,28 @@ class MemberTest {
     public void init() {
         queryFactory = new JPAQueryFactory(em);
 
-        Member member = Member.builder()
+        // given
+        em.persist(Member.builder()
                 .username("PARK SUNG DONG")
                 .age(29)
                 .team(Team.builder().name("NEW TEAM").build())
-                .build();
+                .build());
+        em.persist(Member.builder()
+                .username("SON")
+                .age(29)
+                .team(Team.builder().name("YES TEAM").build())
+                .build());
+        em.persist(Member.builder()
+                .username("CHA")
+                .age(51)
+                .team(Team.builder().name("NEW TEAM").build())
+                .build());
+        em.persist(Member.builder()
+                .username("ABA")
+                .age(51)
+                .team(Team.builder().name("NEW TEAM").build())
+                .build());
 
-        em.persist(member);
         em.flush();
         em.clear();
     }
@@ -100,24 +116,6 @@ class MemberTest {
     @Test
     @DisplayName("querydsl 을 통해 정렬 조회를 수행한다.")
     public void querydslSortTest() {
-        // given
-        em.persist(Member.builder()
-                .username("SON")
-                .age(29)
-                .team(Team.builder().name("NEW TEAM").build())
-                .build());
-        em.persist(Member.builder()
-                .username("CHA")
-                .age(51)
-                .team(Team.builder().name("NEW TEAM").build())
-                .build());
-        em.persist(Member.builder()
-                .username("ABA")
-                .age(51)
-                .team(Team.builder().name("NEW TEAM").build())
-                .build());
-        em.flush();
-        em.clear();
 
         // when
         final List<Member> results = queryFactory
@@ -149,15 +147,6 @@ class MemberTest {
     @DisplayName("querydsl 을 이용하여 집함 함수를 이용한다.")
     public void querydslAggregationTest() {
 
-        // given
-        em.persist(Member.builder()
-                .username("ABA")
-                .age(51)
-                .team(Team.builder().name("NEW TEAM").build())
-                .build());
-        em.flush();
-        em.clear();
-
         // when
         final List<Tuple> tuples = queryFactory
                 .select(
@@ -173,10 +162,10 @@ class MemberTest {
         // then
         // 여러 개의 타입을 꺼내올 수 있다.
         Tuple tuple = tuples.get(0);
-        assertThat(tuple.get(member.count())).isEqualTo(2);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
         assertThat(tuple.get(member.age.sum())).isGreaterThan(0);
     }
-    
+
     @Test
     @DisplayName("팀의 이름과 각 팀의 연령을 구하기")
     public void querydslGroupTest() {
@@ -201,5 +190,46 @@ class MemberTest {
         // then
         Tuple teamA = tuples.get(0);
         Tuple teamB = tuples.get(1);
+    }
+
+    @Test
+    @DisplayName("조인하기")
+    public void querydslJoinTest() {
+
+        // given
+        final List<Member> members = queryFactory
+                .selectFrom(member)
+                .leftJoin(member.team, team)
+                .where(team.name.eq("YES TEAM"))
+                .fetch();
+
+        // when
+        assertThat(members)
+                .extracting("username")
+                .containsExactly("SON");
+    }
+
+    @Test
+    @DisplayName("조인 ON 절을 이용하기")
+    public void querydslJoinOnTest() {
+
+        // given
+        final List<Tuple> tuples = queryFactory
+                .select(member, team)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("NEW TEAM"))
+                .fetch();
+
+        // when
+        for(Tuple tuple : tuples) {
+            System.out.println("tuples : " + tuple);
+        }
+    }
+
+    @Test
+    @DisplayName("연관관계가 없는 조인 이용하기")
+    public void querydslJoinOnSecondTest() {
+
     }
 }
