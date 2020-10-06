@@ -160,3 +160,63 @@ final List<Tuple> tuples = queryFactory
         .where(team.name.eq("NEW TEAM"))
         .fetch();
 ```
+
+<BR>
+
+## subQuery 이용하기
+```java
+// subquery 로 들어가는 부분에 대해서 새로운 별칭이 필요하다.
+QMember memberSub = new QMember("memberSub");
+
+// JPAExpressions 는 static import 가 가능하다.
+final List<Member> members = queryFactory
+        .selectFrom(member)
+        .where(member.age.eq(
+                JPAExpressions
+                        .select(memberSub.age.max())
+                        .from(memberSub)
+        ))
+        .fetch();
+
+select
+    member0_.id as id1_0_,
+    member0_.age as age2_0_,
+    member0_.team_id as team_id4_0_,
+    member0_.username as username3_0_ 
+from
+    member member0_ 
+where
+    member0_.age=(
+        select
+            max(member1_.age) 
+        from
+            member member1_
+    )
+```
+* from 절의 서브쿼리는 지원하지 않는다.
+    * 서브쿼리를 join 으로 변경한다.
+    * 애플리케이션 단에서 쿼리를 두 번 분리해서 실행한다.
+    * `nativeSQL` 을 사용한다.
+
+<BR>
+
+## CASE 문 이용하기 (DB 에서 ROW 데이터를 필터링하거나 계산하는 부분은 최소한으로 수행한다.)
+```java
+final List<String> results = queryFactory
+        .select(member.age
+                .when(10).then("10대")
+                .when(50).then("중반")
+                .otherwise("저 세상"))
+        .from(member)
+        .fetch();
+
+
+select
+        case 
+            when member0_.age=? then ? 
+            when member0_.age=? then ? 
+            else '저 세상' 
+        end as col_0_0_ 
+    from
+        member member0_
+```

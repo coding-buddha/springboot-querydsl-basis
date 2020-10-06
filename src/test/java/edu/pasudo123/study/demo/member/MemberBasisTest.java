@@ -1,6 +1,7 @@
 package edu.pasudo123.study.demo.member;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import edu.pasudo123.study.demo.team.Team;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,13 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
 import static edu.pasudo123.study.demo.member.QMember.member;
 import static edu.pasudo123.study.demo.team.QTeam.team;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Member 엔티티 테스트 클래스는")
 @ActiveProfiles("test")
 @Transactional
-class MemberTest {
+class MemberBasisTest {
 
     @Autowired
     private EntityManager em;
@@ -228,8 +229,50 @@ class MemberTest {
     }
 
     @Test
-    @DisplayName("연관관계가 없는 조인 이용하기")
-    public void querydslJoinOnSecondTest() {
+    @DisplayName("나이가 가장 많은 회원 조회")
+    public void querydslSubQuery() {
 
+        // subquery 로 들어가는 부분에 대해서 새로운 별칭이 필요하다.
+        QMember memberSub = new QMember("memberSub");
+
+        final List<Member> members = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(
+                        select(memberSub.age.max())
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(members).extracting("age")
+                .hasSizeGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("case 조건절을 이용한 query 수행")
+    public void querydslCaseQuery() {
+        final List<String> results = queryFactory
+                .select(member.age
+                        .when(10).then("10대")
+                        .when(50).then("중반")
+                        .otherwise("저 세상"))
+                .from(member)
+                .fetch();
+
+        assertThat(results.size()).isGreaterThan(0);
+    }
+
+    @Test
+    @DisplayName("concat 이용해서 querydsl 수행")
+    public void querydslConcatQuery() {
+
+        // .stringValue 를 사용할 일이 많다.
+        final List<String> results = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .fetch();
+
+        for(String concatResult : results) {
+            System.out.println(concatResult);
+        }
     }
 }
