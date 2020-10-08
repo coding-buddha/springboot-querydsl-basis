@@ -317,3 +317,44 @@ public class UserDto {
     }
 }
 ```
+
+<BR>
+
+## @QueryProjection 을 이용한 Dto 조회
+```java
+@Test
+@DisplayName("querydsl 이용, @QueryProjection annotation 이용을 한다.")
+public void findDtoByQueryProjectionAnnotation() {
+    /**
+     * compile querydsl task 를 수행시켜서 dto 에 관한 QClass 를 만들어준다.
+     * task compileQuerydsl
+     *
+     * Querydsl 로 만들어놓은 dto 생성자에서 추가적인 필드를 넣으면 컴파일 에러가 발생한다.
+     * 나머지 위에 setter, field, constructor 는 컴파일타임에 에러가 확인되지 않고 런타임에서 에러를 확인된다.
+     *
+     * [단점]
+     * Dto 에 querydsl 관련된 코드가 의존적으로 들어갈 수 있다.
+     * 해당 Dto 가 각층의 레이어에서 쓰이게 된다면 @QueryProjection 가 여기저기 돌아다니게 된다.
+     * **/
+    final List<AccountDto> accountDtos = queryFactory
+            .select(new QAccountDto(member.username, member.age))
+            .from(member)
+            .fetch();
+
+    accountDtos.forEach(System.out::println);
+}
+
+@Getter
+@ToString
+public class AccountDto {
+
+    private String username;
+    private int age;
+
+    @QueryProjection
+    public AccountDto(String username, int age) {
+        this.username = username;
+        this.age = age;
+    }
+}
+``` 
