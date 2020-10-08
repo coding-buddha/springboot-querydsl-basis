@@ -1,7 +1,6 @@
 package edu.pasudo123.study.demo.member;
 
 import com.querydsl.core.Tuple;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import edu.pasudo123.study.demo.team.Team;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +12,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
-
 import java.util.List;
 
-import static com.querydsl.jpa.JPAExpressions.*;
+import static com.querydsl.jpa.JPAExpressions.select;
 import static edu.pasudo123.study.demo.member.QMember.member;
 import static edu.pasudo123.study.demo.team.QTeam.team;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -262,7 +260,7 @@ class MemberBasisTest {
     }
 
     @Test
-    @DisplayName("concat 이용해서 querydsl 수행")
+    @DisplayName("concat 이용해서 querydsl 수행 (문자더하기)")
     public void querydslConcatQuery() {
 
         // .stringValue 를 사용할 일이 많다.

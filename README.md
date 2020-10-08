@@ -220,3 +220,100 @@ select
     from
         member member0_
 ```
+
+<BR>
+
+## Query Projection 이용하기 Dto 변환을 수행한다.
+* 3가지 방법이 존재한다.
+    * Setter
+    * Field
+    * Constructor
+
+```java
+@Test
+@DisplayName("jpql 이용, query projection 이용하기, Dto 반환")
+public void findDtoByJPQL() {
+    // 생성자 처럼 이용한다.
+    // new operation 을 활용하여 패키지 경로까지 다 적어주어야 하기 때문에 지저분해진다.
+    /** 조회하려는 필드의 생성자만 있으면 된다. **/
+    final List<MemberDto> memberDtos = em.createQuery("select new edu.pasudo123.study.demo.member.MemberDto(m.username, m.age) from Member m", MemberDto.class)
+            .getResultList();
+
+    memberDtos.forEach(System.out::println);
+}
+
+@Test
+@DisplayName("querydsl 이용, Dto 반환 [Setter] 이용")
+public void findDtoByQuerydslSetter() {
+    final List<MemberDto> memberDtos = queryFactory
+            // getter & setter & default constructor 필요
+            // 접근지정자는 public 으로 수행한다.
+            .select(Projections.bean(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+    memberDtos.forEach(System.out::println);
+}
+
+@Test
+@DisplayName("querydsl 이용, Dto 반환 [Field] 이용")
+public void findDtoByQuerydslField() {
+    final List<MemberDto> memberDtos = queryFactory
+            // getter & setter & default constructor 필요
+            .select(Projections.fields(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+    memberDtos.forEach(System.out::println);
+}
+
+@Test
+@DisplayName("querydsl 이용, Dto 반환 [Constructor] 이용")
+public void findDtoByQuerydslConstructor() {
+    final List<MemberDto> memberDtos = queryFactory
+            // getter & setter & required constructor 필요
+            .select(Projections.constructor(MemberDto.class, member.username, member.age))
+            .from(member)
+            .fetch();
+
+    memberDtos.forEach(System.out::println);
+}
+
+@Test
+@DisplayName("querydsl 이용, Dto 반환 as 키워드 이용")
+public void findDtoByQuerydslAsKeyword() {
+    final List<UserDto> userDtos = queryFactory
+            // getter & setter & required constructor 필요
+            .select(Projections.constructor(UserDto.class, member.username.as("name"), member.age))
+            .from(member)
+            .fetch();
+
+    userDtos.forEach(System.out::println);
+
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
+public class MemberDto {
+
+    private String username;
+    private int age;
+
+    public MemberDto(String username, int age) {
+        this.username = username;
+        this.age = age;
+    }
+}
+
+@ToString
+@Getter
+public class UserDto {
+    private String name;
+    private int age;
+
+    public UserDto(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+```
