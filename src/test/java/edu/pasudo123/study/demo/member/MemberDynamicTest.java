@@ -1,7 +1,6 @@
 package edu.pasudo123.study.demo.member;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import edu.pasudo123.study.demo.team.Team;
